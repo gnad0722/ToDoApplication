@@ -69,17 +69,19 @@ The frontend communicates with the ToDo Management RESTful Backend API to handle
 
 The frontend is responsible for rendering the user interface, managing client-side state, handling user interactions, and communicating with the backend through HTTP REST APIs.
 
-The exact frontend framework, libraries, and versions depend on the implementation.
-
-Possible technology categories include:
-
-- **Frontend Framework:** [React / Angular / Vue.js]
-- **Programming Language:** [JavaScript / TypeScript]
-- **Styling:** [Tailwind CSS / Bootstrap / CSS]
-- **HTTP Client:** [Axios / Fetch API]
-- **State Management:** [Context API / Redux / Zustand / Pinia]
-- **Build Tool:** [Vite / Webpack / Angular CLI]
+- **Frontend Framework:** React 19
+- **Programming Language:** TypeScript
+- **Styling:** Tailwind CSS 4, lucide-react icons
+- **HTTP Client:** Axios (JWT interceptor with automatic token refresh)
+- **Server State:** TanStack Query (caching, invalidation, pagination)
+- **Client State:** React Context (authenticated user)
+- **Routing:** React Router 7
+- **Forms & Validation:** React Hook Form + Zod (limits mirror the backend DTO constraints)
+- **Notifications:** Sonner
+- **Build Tool:** Vite 6
 - **API Documentation:** OpenAPI 3.1.0
+
+In development, Vite proxies `/api/*` to `VITE_API_BASE_URL`, so the backend does not need CORS configuration. A production build calls `VITE_API_BASE_URL` directly, which requires CORS on the backend.
 
 ## Getting Started
 
@@ -241,33 +243,34 @@ A typical user workflow is as follows:
 
 ## Project Structure
 
-The frontend source code should be organized into logical modules to improve maintainability and separation of concerns.
-
-A possible structure is:
-
 ```text
 src/
-├── assets/              # Images, icons, and static resources
-├── components/          # Reusable UI components
-├── layouts/             # Application layouts
-├── pages/               # Application pages
-│   ├── auth/            # Login and registration
-│   ├── dashboard/       # Dashboard
-│   ├── todo/            # To-do list pages
-│   ├── task/            # Task pages
-│   ├── note/            # Note management
-│   └── project/         # Project management
-├── services/            # Backend API communication
-├── hooks/               # Reusable application hooks
-├── contexts/            # Global application contexts
-├── routes/              # Application routing
-├── utils/               # Utility functions
-├── types/               # Shared type definitions
-├── styles/              # Global styles
-└── App                  # Application entry component
+├── config/              # env, React Query client, query-key factory
+├── types/               # API envelope types and frontend domain models
+├── services/            # HTTP layer: one file per backend module
+│   ├── http.ts          #   axios instance, JWT + refresh interceptor, envelope unwrapping
+│   ├── mappers.ts       #   backend DTO -> frontend model (handles naming differences)
+│   └── *Service.ts      #   auth, todo, task, note, project
+├── hooks/               # React Query hooks per module (queries + mutations + toasts)
+├── contexts/            # AuthContext (session, login, register, logout)
+├── schemas/             # Zod validation schemas (mirror backend constraints)
+├── routes/              # router, route guards, central URL paths
+├── layouts/             # AuthLayout (public), AppLayout (sidebar + top bar)
+├── components/
+│   ├── ui/              # design-system primitives: Button, Input, Modal, Drawer, ...
+│   ├── todo/            # TodoCard, TodoFormModal
+│   ├── task/            # TaskRow, TaskPanel, NoteSection, CreateTaskModal, ...
+│   └── project/         # ProjectCard, ProjectFormModal, DeadlineBadge
+├── pages/               # auth/, dashboard/, todo/, project/, profile/
+├── utils/               # dates, errors, filters, class names
+└── main.tsx             # providers + router entry
 ```
 
-The actual structure may vary depending on the selected frontend framework and architectural decisions.
+**Data flow:** `page -> hook (React Query) -> service -> http (axios) -> backend`.
+Components never call axios directly, and backend naming quirks are resolved in `services/mappers.ts`.
+
+**Adding a feature:** add types in `types/models.ts`, a service in `services/`, hooks in `hooks/`,
+query keys in `config/queryKeys.ts`, then components and a page, and register the route in `routes/`.
 
 ## Error Handling and Validation
 
