@@ -1,7 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { Input, Textarea } from '@/components/ui';
 import { LIMITS, type TaskForm } from '@/schemas';
-import type { Task } from '@/types/models';
+import type { Task, UpdateTaskPayload } from '@/types/models';
 import { toApiDateTime, toInputDateTime } from '@/utils/date';
 
 /** Fields that can receive server validation messages (keys of the request JSON). */
@@ -40,6 +40,24 @@ export function taskToForm(task?: Task | null): TaskForm {
     expectStart: toInputDateTime(task?.expectStart),
     expectEnd: toInputDateTime(task?.expectEnd),
   };
+}
+
+/**
+ * PATCH payload with only the fields that differ from `original`.
+ * The backend re-validates every date it receives ("Due date cannot be in the
+ * past"), so re-sending an unchanged start time that has already passed would
+ * make e.g. a simple rename fail. Clearing a date sends nothing because the
+ * backend ignores null values on update.
+ */
+export function formToTaskPatch(original: TaskForm, values: TaskForm): UpdateTaskPayload {
+  const before = formToTaskPayload(original);
+  const after = formToTaskPayload(values);
+  const patch: UpdateTaskPayload = {};
+  if (after.name !== before.name) patch.name = after.name;
+  if (after.description !== before.description) patch.description = after.description;
+  if (after.expectStart && after.expectStart !== before.expectStart) patch.expectStart = after.expectStart;
+  if (after.expectEnd && after.expectEnd !== before.expectEnd) patch.expectEnd = after.expectEnd;
+  return patch;
 }
 
 export function formToTaskPayload(values: TaskForm) {

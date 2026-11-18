@@ -8,15 +8,17 @@ import { taskSchema, type TaskForm } from '@/schemas';
 import { formatDateTime, fromNow, isOverdue } from '@/utils/date';
 import { applyServerErrors } from '@/utils/formErrors';
 import { NoteSection } from './NoteSection';
-import { formToTaskPayload, TASK_FORM_FIELDS, TaskFields, taskToForm } from './TaskFields';
+import { formToTaskPatch, TASK_FORM_FIELDS, TaskFields, taskToForm } from './TaskFields';
 
 interface Props {
   taskId: number | null;
+  /** Open directly in the edit form (e.g. from the pencil button on a row). */
+  startInEdit?: boolean;
   onClose: () => void;
 }
 
 /** Side panel with task details, editing, completion, note and delete. */
-export function TaskPanel({ taskId, onClose }: Props) {
+export function TaskPanel({ taskId, startInEdit = false, onClose }: Props) {
   const { data: task, isLoading, error, refetch } = useTask(taskId);
   const update = useUpdateTask();
   const markDone = useMarkTaskDone();
@@ -25,8 +27,19 @@ export function TaskPanel({ taskId, onClose }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const form = useForm<TaskForm>({ resolver: zodResolver(taskSchema) });
 
-  // Leave edit mode when another task is opened.
-  useEffect(() => setEditing(false), [taskId]);
+  // When another task is opened: show its details, or its edit form if requested.
+  // Keyed on the loaded task's id (not the object) so a refetch after saving
+  // does not reopen the form.
+  const loadedId = task?.id;
+  useEffect(() => {
+    if (startInEdit && task && task.id === taskId) {
+      form.reset(taskToForm(task));
+      setEditing(true);
+    } else {
+      setEditing(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, loadedId, startInEdit]);
 
   const startEditing = () => {
     form.reset(taskToForm(task));
@@ -35,8 +48,13 @@ export function TaskPanel({ taskId, onClose }: Props) {
 
   const onSubmit = (values: TaskForm) => {
     if (!task) return;
+    const payload = formToTaskPatch(taskToForm(task), values);
+    if (Object.keys(payload).length === 0) {
+      setEditing(false);
+      return;
+    }
     update.mutate(
-      { id: task.id, payload: formToTaskPayload(values) },
+      { id: task.id, payload },
       {
         onSuccess: () => setEditing(false),
         onError: (e) => applyServerErrors(e, form.setError, TASK_FORM_FIELDS),
@@ -63,12 +81,9 @@ export function TaskPanel({ taskId, onClose }: Props) {
             </Button>
           </div>
         ) : (
-          <div className="flex justify-between gap-2">
+          <div className="flex justify-start gap-2">
             <Button variant="ghost" className="text-red-600 hover:bg-red-50" icon={<Trash2 className="size-4" />} onClick={() => setConfirmDelete(true)}>
               Delete
-            </Button>
-            <Button variant="secondary" icon={<Pencil className="size-4" />} onClick={startEditing}>
-              Edit
             </Button>
           </div>
         ))
@@ -93,7 +108,12 @@ export function TaskPanel({ taskId, onClose }: Props) {
               {task.done ? <Badge tone="green">Completed</Badge> : <Badge tone="brand">In progress</Badge>}
               {overdue && <Badge tone="red">Overdue</Badge>}
             </div>
-            <h2 className={task.done ? 'text-xl font-semibold text-slate-400 line-through' : 'text-xl font-semibold text-slate-900'}>{task.name}</h2>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className={task.done ? 'text-xl font-semibold text-slate-400 line-through' : 'text-xl font-semibold text-slate-900'}>{task.name}</h2>
+              <Button variant="secondary" size="sm" icon={<Pencil className="size-4" />} onClick={startEditing}>
+                Edit
+              </Button>
+            </div>
             <p className="mt-2 text-sm whitespace-pre-wrap text-slate-600">{task.description || 'No description'}</p>
           </div>
 

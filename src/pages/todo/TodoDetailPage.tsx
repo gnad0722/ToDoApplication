@@ -1,54 +1,21 @@
-import { useState, type FormEvent } from 'react';
-import { ArrowLeft, CalendarDays, ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Card, ConfirmDialog, EmptyState, ErrorState, ListSkeleton, Pagination, ProgressBar, Skeleton, Tabs } from '@/components/ui';
-import { CreateTaskModal } from '@/components/task/CreateTaskModal';
-import { TaskPanel } from '@/components/task/TaskPanel';
-import { TaskRow } from '@/components/task/TaskRow';
+import { useState } from 'react';
+import { ArrowLeft, CalendarDays, Pencil, Trash2 } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Button, Card, ConfirmDialog, ErrorState, ProgressBar, Skeleton } from '@/components/ui';
+import { TaskListSection } from '@/components/task/TaskListSection';
 import { TodoFormModal } from '@/components/todo/TodoFormModal';
-import { PAGE_SIZE } from '@/config/env';
-import { useTasksByTodo } from '@/hooks/useTasks';
 import { useDeleteTodo, useTodo } from '@/hooks/useTodos';
 import { paths } from '@/routes/paths';
 import { formatDateTime } from '@/utils/date';
-import { compactFilters, taskFilters } from '@/utils/filters';
-
-type StatusTab = 'all' | 'active' | 'done';
-const tabs: { value: StatusTab; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'done', label: 'Completed' },
-];
 
 export function TodoDetailPage() {
   const todoId = Number(useParams().id);
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const openTaskId = searchParams.get('task') ? Number(searchParams.get('task')) : null;
-
-  const [tab, setTab] = useState<StatusTab>('all');
-  const [page, setPage] = useState(0);
-  const [quickName, setQuickName] = useState('');
-  const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const todoQuery = useTodo(todoId);
-  const tasksQuery = useTasksByTodo(todoId, {
-    page,
-    size: PAGE_SIZE.tasks,
-    sort: 'createdAt,asc',
-    filters: compactFilters(tab !== 'all' && taskFilters.done(tab === 'done')),
-  });
   const deleteTodo = useDeleteTodo();
-
-  const openTask = (id: number) => setSearchParams({ task: String(id) });
-  const closeTask = () => setSearchParams({}, { replace: true });
-
-  const onQuickAdd = (e: FormEvent) => {
-    e.preventDefault();
-    setCreateOpen(true);
-  };
 
   if (todoQuery.error) {
     return (
@@ -60,7 +27,6 @@ export function TodoDetailPage() {
   }
 
   const todo = todoQuery.data;
-  const tasks = tasksQuery.data?.content ?? [];
 
   return (
     <>
@@ -99,60 +65,8 @@ export function TodoDetailPage() {
         )}
       </Card>
 
-      {/* Quick add */}
-      <form onSubmit={onQuickAdd} className="mb-4 flex gap-2">
-        <div className="relative flex-1">
-          <Plus className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-brand-500" />
-          <input
-            value={quickName}
-            onChange={(e) => setQuickName(e.target.value)}
-            placeholder="Add a task… (press Enter)"
-            aria-label="New task name"
-            className="h-12 w-full rounded-xl border border-slate-200 bg-white pr-3 pl-11 text-sm shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none"
-          />
-        </div>
-        <Button type="submit" size="lg" className="h-12">
-          Add
-        </Button>
-      </form>
+      <TaskListSection listId={todoId} />
 
-      <div className="mb-4 flex items-center justify-between">
-        <Tabs value={tab} onChange={(v) => { setTab(v); setPage(0); }} items={tabs} />
-        {tasksQuery.data && <span className="text-sm text-slate-500">{tasksQuery.data.meta.totalElements} tasks</span>}
-      </div>
-
-      {/* Tasks */}
-      {tasksQuery.isLoading ? (
-        <ListSkeleton />
-      ) : tasksQuery.error ? (
-        <ErrorState error={tasksQuery.error} onRetry={tasksQuery.refetch} />
-      ) : tasks.length === 0 ? (
-        <EmptyState
-          icon={<ClipboardList className="size-7" />}
-          title={tab === 'all' ? 'No tasks yet' : tab === 'active' ? 'Nothing left to do 🎉' : 'No completed tasks yet'}
-          description={tab === 'all' ? 'Add your first task using the box above.' : undefined}
-        />
-      ) : (
-        <div className={tasksQuery.isFetching ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
-          <div className="space-y-2">
-            {tasks.map((task) => (
-              <TaskRow key={task.id} task={task} onOpen={(t) => openTask(t.id)} />
-            ))}
-          </div>
-          {tasksQuery.data && <Pagination meta={tasksQuery.data.meta} onPageChange={setPage} />}
-        </div>
-      )}
-
-      <CreateTaskModal
-        open={createOpen}
-        initialName={quickName}
-        todoId={todoId}
-        onClose={() => {
-          setCreateOpen(false);
-          setQuickName('');
-        }}
-      />
-      <TaskPanel taskId={openTaskId} onClose={closeTask} />
       <TodoFormModal open={editOpen} onClose={() => setEditOpen(false)} todo={todo} />
       <ConfirmDialog
         open={confirmDelete}

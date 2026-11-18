@@ -3,6 +3,7 @@ import { ArrowLeft, CalendarRange, Pencil, Trash2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { DeadlineBadge } from '@/components/project/DeadlineBadge';
 import { ProjectFormModal } from '@/components/project/ProjectFormModal';
+import { TaskListSection } from '@/components/task/TaskListSection';
 import { Button, Card, ConfirmDialog, ErrorState, ProgressBar, Skeleton } from '@/components/ui';
 import { useDeleteProject, useProject } from '@/hooks/useProjects';
 import { paths } from '@/routes/paths';
@@ -81,6 +82,10 @@ export function ProjectDetailPage() {
         </div>
         {project.lastModifiedAt && <p className="mt-4 text-xs text-slate-400">Updated {fromNow(project.lastModifiedAt)}</p>}
       </Card>
+
+      <h2 className="mb-3 text-lg font-semibold text-slate-900">Tasks</h2>
+      {/* A project is a to-do list in the backend, so its id is used as the list id. */}
+      <TaskListSection listId={project.id} />
 
       <ProjectFormModal open={editOpen} onClose={() => setEditOpen(false)} project={project} />
       <ConfirmDialog
