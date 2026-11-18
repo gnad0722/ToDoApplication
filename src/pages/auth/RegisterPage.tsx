@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { paths } from '@/routes/paths';
 import { LIMITS, registerSchema, type RegisterForm } from '@/schemas';
 import { ApiError, getErrorMessage } from '@/utils/errors';
+import { applyServerErrors } from '@/utils/formErrors';
 
 export function RegisterPage() {
   const { register: registerUser } = useAuth();
@@ -19,6 +20,7 @@ export function RegisterPage() {
     register,
     handleSubmit,
     getValues,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -37,6 +39,8 @@ export function RegisterPage() {
         navigate(paths.login, { state: { email: getValues('email'), message: 'Account created. Please log in.' } });
         return;
       }
+      // 400: messages under the inputs. 409 (email/username taken) and others: banner.
+      if (applyServerErrors(e, setError, ['username', 'email', 'password'])) return;
       setServerError(getErrorMessage(e));
     }
   };

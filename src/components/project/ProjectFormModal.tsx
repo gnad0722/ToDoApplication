@@ -6,6 +6,7 @@ import { useCreateProject, useUpdateProject } from '@/hooks/useProjects';
 import { LIMITS, projectSchema, type ProjectForm } from '@/schemas';
 import type { Project } from '@/types/models';
 import { toApiDateTime, toInputDateTime } from '@/utils/date';
+import { applyServerErrors } from '@/utils/formErrors';
 
 interface Props {
   open: boolean;
@@ -23,6 +24,7 @@ export function ProjectFormModal({ open, onClose, project }: Props) {
     handleSubmit,
     reset,
     watch,
+    setError,
     formState: { errors },
   } = useForm<ProjectForm>({ resolver: zodResolver(projectSchema) });
 
@@ -44,8 +46,12 @@ export function ProjectFormModal({ open, onClose, project }: Props) {
       startTime: toApiDateTime(values.startTime),
       expectEnd: toApiDateTime(values.expectEnd),
     };
-    if (isEdit) update.mutate({ id: project.id, payload }, { onSuccess: onClose });
-    else create.mutate(payload, { onSuccess: onClose });
+    const options = {
+      onSuccess: onClose,
+      onError: (e: unknown) => applyServerErrors(e, setError, ['topic', 'description', 'startTime', 'expectEnd']),
+    };
+    if (isEdit) update.mutate({ id: project.id, payload }, options);
+    else create.mutate(payload, options);
   };
 
   const pending = create.isPending || update.isPending;

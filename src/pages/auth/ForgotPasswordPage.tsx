@@ -18,7 +18,8 @@ import {
   type ResetPasswordForm,
 } from '@/schemas';
 import { cn } from '@/utils/cn';
-import { getErrorMessage } from '@/utils/errors';
+import { getErrorMessage, toApiError } from '@/utils/errors';
+import { applyServerErrors } from '@/utils/formErrors';
 
 type Step = 0 | 1 | 2;
 const steps = [
@@ -90,7 +91,7 @@ export function ForgotPasswordPage() {
       setEmail(value.trim());
       setStep(1);
     } catch (e) {
-      emailForm.setError('email', { message: getErrorMessage(e) });
+      if (!applyServerErrors(e, emailForm.setError, ['email'])) emailForm.setError('email', { message: getErrorMessage(e) });
     }
   };
 
@@ -100,7 +101,7 @@ export function ForgotPasswordPage() {
       setResetToken(token);
       setStep(2);
     } catch (e) {
-      otpForm.setError('otp', { message: getErrorMessage(e) });
+      if (!applyServerErrors(e, otpForm.setError, ['otp'])) otpForm.setError('otp', { message: getErrorMessage(e) });
     }
   };
 
@@ -111,7 +112,17 @@ export function ForgotPasswordPage() {
       toast.success('Password changed successfully');
       navigate(paths.login, { replace: true, state: { email, message: 'Password changed. Please log in with your new password.' } });
     } catch (e) {
-      passwordForm.setError('newPassword', { message: getErrorMessage(e) });
+      if (applyServerErrors(e, passwordForm.setError, ['newPassword'])) return;
+      const apiError = toApiError(e);
+      // Expired / invalid reset token (400): the user must request a new code.
+      if (apiError.status === 400 && /reset|token|expired/i.test(apiError.message)) {
+        toast.error(apiError.message);
+        setResetToken('');
+        otpForm.reset({ otp: '' });
+        setStep(0);
+        return;
+      }
+      passwordForm.setError('newPassword', { message: apiError.message });
     }
   };
 

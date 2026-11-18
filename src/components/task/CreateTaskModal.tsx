@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form';
 import { Button, Modal } from '@/components/ui';
 import { useCreateTask } from '@/hooks/useTasks';
 import { taskSchema, type TaskForm } from '@/schemas';
-import { formToTaskPayload, TaskFields, taskToForm } from './TaskFields';
+import { applyServerErrors } from '@/utils/formErrors';
+import { formToTaskPayload, TASK_FORM_FIELDS, TaskFields, taskToForm } from './TaskFields';
 
 interface Props {
   open: boolean;
@@ -23,7 +24,10 @@ export function CreateTaskModal({ open, onClose, todoId, initialName }: Props) {
   }, [open, initialName, form]);
 
   const onSubmit = (values: TaskForm) => {
-    create.mutate({ ...formToTaskPayload(values), toDoListId: todoId }, { onSuccess: onClose });
+    create.mutate(
+      { ...formToTaskPayload(values), toDoListId: todoId },
+      { onSuccess: onClose, onError: (e) => applyServerErrors(e, form.setError, TASK_FORM_FIELDS) },
+    );
   };
 
   return (

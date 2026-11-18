@@ -6,6 +6,7 @@ import { useCreateTodo, useUpdateTodo } from '@/hooks/useTodos';
 import { LIMITS, todoSchema, type TodoForm } from '@/schemas';
 import type { TodoList } from '@/types/models';
 import { toApiDateTime, toInputDateTime } from '@/utils/date';
+import { applyServerErrors } from '@/utils/formErrors';
 
 interface Props {
   open: boolean;
@@ -25,6 +26,7 @@ export function TodoFormModal({ open, onClose, todo, onSaved }: Props) {
     handleSubmit,
     reset,
     watch,
+    setError,
     formState: { errors },
   } = useForm<TodoForm>({ resolver: zodResolver(todoSchema) });
 
@@ -39,6 +41,7 @@ export function TodoFormModal({ open, onClose, todo, onSaved }: Props) {
         onSaved?.(saved);
         onClose();
       },
+      onError: (e: unknown) => applyServerErrors(e, setError, ['topic', 'startTime']),
     };
     if (isEdit) update.mutate({ id: todo.id, payload }, options);
     else create.mutate(payload, options);

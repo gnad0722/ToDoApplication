@@ -4,6 +4,9 @@ import { LIMITS, type TaskForm } from '@/schemas';
 import type { Task } from '@/types/models';
 import { toApiDateTime, toInputDateTime } from '@/utils/date';
 
+/** Fields that can receive server validation messages (keys of the request JSON). */
+export const TASK_FORM_FIELDS = ['name', 'description', 'expectStart', 'expectEnd'] as const;
+
 /** Form fields shared by "create task" (modal) and "edit task" (panel). */
 export function TaskFields({ form }: { form: UseFormReturn<TaskForm> }) {
   const {

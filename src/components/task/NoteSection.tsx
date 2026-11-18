@@ -7,6 +7,7 @@ import { useDeleteNote, useNote, useSaveNote } from '@/hooks/useNotes';
 import { LIMITS, noteSchema, type NoteForm } from '@/schemas';
 import { fromNow } from '@/utils/date';
 import { getErrorMessage } from '@/utils/errors';
+import { applyServerErrors } from '@/utils/formErrors';
 
 /** A task has at most one note. This section shows, adds, edits and deletes it. */
 export function NoteSection({ taskId }: { taskId: number }) {
@@ -21,6 +22,7 @@ export function NoteSection({ taskId }: { taskId: number }) {
     handleSubmit,
     reset,
     watch,
+    setError,
     formState: { errors },
   } = useForm<NoteForm>({ resolver: zodResolver(noteSchema) });
 
@@ -30,7 +32,13 @@ export function NoteSection({ taskId }: { taskId: number }) {
   };
 
   const onSubmit = ({ description }: NoteForm) => {
-    save.mutate({ description: description.trim(), exists: !!note }, { onSuccess: () => setEditing(false) });
+    save.mutate(
+      { description: description.trim(), exists: !!note },
+      {
+        onSuccess: () => setEditing(false),
+        onError: (e) => applyServerErrors(e, setError, ['description']),
+      },
+    );
   };
 
   return (

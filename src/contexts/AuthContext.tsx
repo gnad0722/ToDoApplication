@@ -44,8 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // The HTTP layer calls this when the refresh token is no longer valid.
   useEffect(() => {
-    onSessionExpired(() => {
-      toast.error('Your session has expired. Please log in again.', { id: 'session-expired' });
+    onSessionExpired((message) => {
+      toast.error(message || 'Session expired, please log in again', { id: 'session-expired' });
       endSession();
     });
   }, [endSession]);

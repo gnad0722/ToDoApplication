@@ -4,7 +4,7 @@ import { queryKeys } from '@/config/queryKeys';
 import { todoService } from '@/services/todoService';
 import type { PageQuery } from '@/types/api';
 import type { TodoPayload } from '@/types/models';
-import { getErrorMessage } from '@/utils/errors';
+import { notifyMutationError } from '@/utils/formErrors';
 
 export function useTodoPage(q: PageQuery) {
   return useQuery({
@@ -30,7 +30,7 @@ export function useCreateTodo() {
       qc.invalidateQueries({ queryKey: queryKeys.todos.all });
       toast.success('To-do list created');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }
 
@@ -42,7 +42,7 @@ export function useUpdateTodo() {
       qc.invalidateQueries({ queryKey: queryKeys.todos.all });
       toast.success('To-do list updated');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }
 
@@ -56,6 +56,6 @@ export function useDeleteTodo() {
       qc.invalidateQueries({ queryKey: queryKeys.tasks.all });
       toast.success('To-do list deleted');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }

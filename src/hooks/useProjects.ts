@@ -4,7 +4,7 @@ import { queryKeys } from '@/config/queryKeys';
 import { projectService } from '@/services/projectService';
 import type { PageQuery } from '@/types/api';
 import type { ProjectPayload } from '@/types/models';
-import { getErrorMessage } from '@/utils/errors';
+import { notifyMutationError } from '@/utils/formErrors';
 
 export function useProjectPage(q: PageQuery) {
   return useQuery({
@@ -30,7 +30,7 @@ export function useCreateProject() {
       qc.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success('Project created');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }
 
@@ -42,7 +42,7 @@ export function useUpdateProject() {
       qc.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success('Project updated');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }
 
@@ -55,6 +55,6 @@ export function useDeleteProject() {
       qc.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success('Project deleted');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }

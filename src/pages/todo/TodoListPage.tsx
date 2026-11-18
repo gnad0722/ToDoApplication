@@ -7,9 +7,9 @@ import { PAGE_SIZE } from '@/config/env';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useDeleteTodo, useTodoPage } from '@/hooks/useTodos';
 import type { TodoList } from '@/types/models';
-import { buildFilter, compactFilters } from '@/utils/filters';
+import { compactFilters, todoFilters, type TodoSort } from '@/utils/filters';
 
-type SortKey = 'createdAt,desc' | 'startTime,asc' | 'topic,asc';
+type SortKey = Extract<TodoSort, 'createdAt,desc' | 'startTime,asc' | 'topic,asc'>;
 const sortOptions: { value: SortKey; label: string }[] = [
   { value: 'createdAt,desc', label: 'Newest first' },
   { value: 'startTime,asc', label: 'Start time' },
@@ -29,7 +29,7 @@ export function TodoListPage() {
     page,
     size: PAGE_SIZE.todos,
     sort,
-    filters: compactFilters(debouncedSearch && buildFilter('topic', debouncedSearch)),
+    filters: compactFilters(debouncedSearch && todoFilters.topicContains(debouncedSearch)),
   };
   const { data, isLoading, error, refetch, isFetching } = useTodoPage(query);
   const deleteTodo = useDeleteTodo();

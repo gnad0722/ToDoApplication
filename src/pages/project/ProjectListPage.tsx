@@ -7,9 +7,9 @@ import { PAGE_SIZE } from '@/config/env';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useDeleteProject, useProjectPage } from '@/hooks/useProjects';
 import type { Project } from '@/types/models';
-import { buildFilter, compactFilters } from '@/utils/filters';
+import { compactFilters, projectFilters, type ProjectSort } from '@/utils/filters';
 
-type SortKey = 'createdAt,desc' | 'expectEnd,asc' | 'topic,asc';
+type SortKey = Extract<ProjectSort, 'createdAt,desc' | 'expectEnd,asc' | 'topic,asc'>;
 const sortOptions: { value: SortKey; label: string }[] = [
   { value: 'createdAt,desc', label: 'Newest first' },
   { value: 'expectEnd,asc', label: 'Deadline' },
@@ -29,7 +29,7 @@ export function ProjectListPage() {
     page,
     size: PAGE_SIZE.projects,
     sort,
-    filters: compactFilters(debouncedSearch && buildFilter('topic', debouncedSearch)),
+    filters: compactFilters(debouncedSearch && projectFilters.topicContains(debouncedSearch)),
   });
   const deleteProject = useDeleteProject();
   const projects = data?.content ?? [];

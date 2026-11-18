@@ -112,21 +112,37 @@ An expired or invalid JWT must produce **401**, not 403 and not 500.
 
 ## 5. How the frontend uses error responses
 
-Reference: `src/utils/errors.ts`, `src/services/http.ts`.
+Reference: `src/utils/errors.ts`, `src/utils/formErrors.ts`, `src/services/http.ts`.
 
 | Status | Frontend behaviour |
 |--------|--------------------|
-| `400`  | Shows `message` in a toast or under the related form field. |
-| `401` on a protected endpoint | Calls `POST /api/auth/refresh` once and retries the request. If the refresh fails, the session is cleared and the user is sent to the login page. |
-| `401` on `/api/auth/login` | Shows `message` in the login form (no refresh attempt). |
-| `403`  | Tries one token refresh (to cover backends that send 403 for expired tokens), then shows `message`. |
+| `400` validation (`data` = field map) | Each message is shown under its form input. If the form has none of those fields, `message` is shown in a toast. |
+| `400` other | Shows `message` in a toast (or in the auth form). An expired reset-password token sends the user back to step 1. |
+| `401` on a protected endpoint | Calls `POST /api/auth/refresh` once and retries the request. If the refresh is rejected, the session is cleared, the refresh `message` is shown, and the user is sent to the login page. If the server cannot be reached during refresh, the session is kept. |
+| `401` on `/api/auth/*` public endpoints | Shows `message` in the form (no refresh attempt). |
+| `403`  | Shows `message`. No refresh: expired tokens are expected to be `401`. |
 | `404` on `GET /api/note/{taskId}` | Treated as "task has no note", so the UI shows **Add a note** and no error. |
 | `404` elsewhere | Shows an error card with `message` and a **Try again** button. |
-| `409`  | Shows `message` in a toast or in the register form. |
+| `409`  | Shows `message` in a toast or in the register form. On notes, the note is reloaded. |
 | `5xx`  | Shows `message` in a toast. |
 | No response (backend down / network) | Shows `Cannot reach the server…`. |
 
 Message priority used by the frontend: `message` → `error` → a default text based on the status code.
+
+---
+
+## 5.1 Pagination, sorting and filters (reference)
+
+```
+GET /api/task/todo/1?page=0&size=20&sort=expectStart,asc&filters=isDone:EQ:false
+```
+
+- `page` is **0-based** (Spring default), `size` ≥ 1, `sort=field,asc|desc` (repeatable).
+- Filters: `field:OPERATOR:value`, repeatable. Param name is `filters` for todo/task and `filter` for project.
+- Operators: `EQ, NOT_EQ, CONTAINS, STARTS_WITH, ENDS_WITH, GT, GTE, LT, LTE, IS_NULL, IS_NOT_NULL`.
+- Allowed fields — todo: `topic, startTime, numTask, numCompleteTask`; task: `name, description, isDone, expectStart, expectEnd`; project: `topic, description, startTime, expectEnd, numTask, numCompleteTask`.
+- Invalid filter → `400 Invalid filter: …`; invalid sort field → `400 Invalid sort field: …`.
+- Frontend builders: `src/utils/filters.ts`.
 
 ---
 

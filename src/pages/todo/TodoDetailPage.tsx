@@ -11,7 +11,7 @@ import { useTasksByTodo } from '@/hooks/useTasks';
 import { useDeleteTodo, useTodo } from '@/hooks/useTodos';
 import { paths } from '@/routes/paths';
 import { formatDateTime } from '@/utils/date';
-import { buildFilter, compactFilters } from '@/utils/filters';
+import { compactFilters, taskFilters } from '@/utils/filters';
 
 type StatusTab = 'all' | 'active' | 'done';
 const tabs: { value: StatusTab; label: string }[] = [
@@ -38,7 +38,7 @@ export function TodoDetailPage() {
     page,
     size: PAGE_SIZE.tasks,
     sort: 'createdAt,asc',
-    filters: compactFilters(tab !== 'all' && buildFilter('done', tab === 'done')),
+    filters: compactFilters(tab !== 'all' && taskFilters.done(tab === 'done')),
   });
   const deleteTodo = useDeleteTodo();
 

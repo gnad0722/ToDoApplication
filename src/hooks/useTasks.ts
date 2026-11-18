@@ -5,8 +5,8 @@ import { taskService } from '@/services/taskService';
 import type { PageQuery } from '@/types/api';
 import type { CreateTaskPayload, Task, TodoList, UpdateTaskPayload } from '@/types/models';
 import { parseDate } from '@/utils/date';
-import { getErrorMessage } from '@/utils/errors';
-import { buildFilter } from '@/utils/filters';
+import { notifyMutationError } from '@/utils/formErrors';
+import { taskFilters, type TaskSort } from '@/utils/filters';
 
 /** Task changes affect task lists AND the counters shown on lists/projects/dashboard. */
 function invalidateTaskRelated(qc: QueryClient) {
@@ -32,7 +32,9 @@ export type UpcomingTask = Task & { listTopic: string; listId: number };
  * (one request per list) and merges them, earliest first.
  */
 export function useUpcomingTasks(todos: TodoList[], perList = 5, limit = 8) {
-  const query = { page: 0, size: perList, sort: 'expectStart,asc', filters: [buildFilter('done', false)] };
+  // GET /api/task/todo/{id}?page=0&size=5&sort=expectStart,asc&filters=isDone:EQ:false
+  const sort: TaskSort = 'expectStart,asc';
+  const query = { page: 0, size: perList, sort, filters: [taskFilters.done(false)] };
 
   return useQueries({
     queries: todos.map((todo) => ({
@@ -69,7 +71,7 @@ export function useCreateTask() {
       invalidateTaskRelated(qc);
       toast.success('Task created');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }
 
@@ -81,7 +83,7 @@ export function useUpdateTask() {
       invalidateTaskRelated(qc);
       toast.success('Task updated');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }
 
@@ -89,11 +91,11 @@ export function useMarkTaskDone() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => taskService.markDone(id),
-    onSuccess: (task) => {
+    onSuccess: () => {
       invalidateTaskRelated(qc);
-      toast.success(task.done ? 'Task completed 🎉' : 'Task marked as not done');
+      toast.success('Task completed 🎉');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }
 
@@ -106,6 +108,6 @@ export function useDeleteTask() {
       invalidateTaskRelated(qc);
       toast.success('Task deleted');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }

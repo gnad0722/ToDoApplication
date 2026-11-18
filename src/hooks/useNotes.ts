@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { toast } from 'sonner';
 import { queryKeys } from '@/config/queryKeys';
 import { noteService } from '@/services/noteService';
-import { getErrorMessage } from '@/utils/errors';
+import { isApiError } from '@/utils/errors';
+import { notifyMutationError } from '@/utils/formErrors';
 
 function invalidateNoteRelated(qc: QueryClient, taskId: number) {
   qc.invalidateQueries({ queryKey: queryKeys.notes.byTask(taskId) });
@@ -25,7 +26,11 @@ export function useSaveNote(taskId: number) {
       invalidateNoteRelated(qc, taskId);
       toast.success(exists ? 'Note updated' : 'Note added');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: (e) => {
+      notifyMutationError(e);
+      // 409 "This task already has a note" / 404 "Note not found": our cache is stale.
+      if (isApiError(e, 409) || isApiError(e, 404)) invalidateNoteRelated(qc, taskId);
+    },
   });
 }
 
@@ -38,6 +43,6 @@ export function useDeleteNote(taskId: number) {
       invalidateNoteRelated(qc, taskId);
       toast.success('Note deleted');
     },
-    onError: (e) => toast.error(getErrorMessage(e)),
+    onError: notifyMutationError,
   });
 }

@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { paths } from '@/routes/paths';
 import { loginSchema, type LoginForm } from '@/schemas';
 import { getErrorMessage } from '@/utils/errors';
+import { applyServerErrors } from '@/utils/formErrors';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -21,6 +22,7 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -34,6 +36,8 @@ export function LoginPage() {
       toast.success(`Welcome back, ${user.username}!`);
       navigate(state?.from ?? paths.dashboard, { replace: true });
     } catch (e) {
+      // 400: messages under the inputs. 401 "Email or password is incorrect": banner.
+      if (applyServerErrors(e, setError, ['email', 'password'])) return;
       setServerError(getErrorMessage(e));
     }
   };

@@ -6,8 +6,9 @@ import { Badge, Button, ConfirmDialog, Drawer, ErrorState, Skeleton } from '@/co
 import { useDeleteTask, useMarkTaskDone, useTask, useUpdateTask } from '@/hooks/useTasks';
 import { taskSchema, type TaskForm } from '@/schemas';
 import { formatDateTime, fromNow, isOverdue } from '@/utils/date';
+import { applyServerErrors } from '@/utils/formErrors';
 import { NoteSection } from './NoteSection';
-import { formToTaskPayload, TaskFields, taskToForm } from './TaskFields';
+import { formToTaskPayload, TASK_FORM_FIELDS, TaskFields, taskToForm } from './TaskFields';
 
 interface Props {
   taskId: number | null;
@@ -34,7 +35,13 @@ export function TaskPanel({ taskId, onClose }: Props) {
 
   const onSubmit = (values: TaskForm) => {
     if (!task) return;
-    update.mutate({ id: task.id, payload: formToTaskPayload(values) }, { onSuccess: () => setEditing(false) });
+    update.mutate(
+      { id: task.id, payload: formToTaskPayload(values) },
+      {
+        onSuccess: () => setEditing(false),
+        onError: (e) => applyServerErrors(e, form.setError, TASK_FORM_FIELDS),
+      },
+    );
   };
 
   const overdue = task && !task.done && isOverdue(task.expectEnd);
@@ -90,15 +97,16 @@ export function TaskPanel({ taskId, onClose }: Props) {
             <p className="mt-2 text-sm whitespace-pre-wrap text-slate-600">{task.description || 'No description'}</p>
           </div>
 
-          <Button
-            variant={task.done ? 'secondary' : 'primary'}
-            className="w-full"
-            loading={markDone.isPending}
-            icon={task.done ? <Circle className="size-4" /> : <CheckCircle2 className="size-4" />}
-            onClick={() => markDone.mutate(task.id)}
-          >
-            {task.done ? 'Mark as not done' : 'Mark as done'}
-          </Button>
+          {/* Completion is one-way in the backend, so there is no "undo". */}
+          {task.done ? (
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 py-2.5 text-sm font-medium text-emerald-700">
+              <CheckCircle2 className="size-4" /> Completed
+            </div>
+          ) : (
+            <Button className="w-full" loading={markDone.isPending} icon={<Circle className="size-4" />} onClick={() => markDone.mutate(task.id)}>
+              Mark as done
+            </Button>
+          )}
 
           <dl className="grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4 text-sm">
             <div>
