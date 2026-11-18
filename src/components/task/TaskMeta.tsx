@@ -1,4 +1,4 @@
-import { Clock, StickyNote } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { Task } from '@/types/models';
 import { formatRelativeDay, isOverdue } from '@/utils/date';
@@ -18,11 +18,6 @@ export function TaskMeta({ task }: { task: Task }) {
         </span>
       )}
       {overdue && <Badge tone="red">Overdue</Badge>}
-      {task.hasNote && (
-        <span className="inline-flex items-center gap-1 text-amber-600" title="Has a note">
-          <StickyNote className="size-3.5" /> Note
-        </span>
-      )}
     </div>
   );
 }

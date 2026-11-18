@@ -1,10 +1,12 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryKeys } from '@/config/queryKeys';
 import { taskService } from '@/services/taskService';
 import type { PageQuery } from '@/types/api';
-import type { CreateTaskPayload, UpdateTaskPayload } from '@/types/models';
+import type { CreateTaskPayload, Task, TodoList, UpdateTaskPayload } from '@/types/models';
+import { parseDate } from '@/utils/date';
 import { getErrorMessage } from '@/utils/errors';
+import { buildFilter } from '@/utils/filters';
 
 /** Task changes affect task lists AND the counters shown on lists/projects/dashboard. */
 function invalidateTaskRelated(qc: QueryClient) {
@@ -19,6 +21,35 @@ export function useTasksByTodo(todoId: number, q: PageQuery) {
     queryFn: () => taskService.getByTodo(todoId, q),
     enabled: Number.isFinite(todoId),
     placeholderData: keepPreviousData,
+  });
+}
+
+export type UpcomingTask = Task & { listTopic: string; listId: number };
+
+/**
+ * Dashboard "Upcoming tasks". The backend only exposes tasks per to-do list,
+ * so this asks each of the given lists for its first few unfinished tasks
+ * (one request per list) and merges them, earliest first.
+ */
+export function useUpcomingTasks(todos: TodoList[], perList = 5, limit = 8) {
+  const query = { page: 0, size: perList, sort: 'expectStart,asc', filters: [buildFilter('done', false)] };
+
+  return useQueries({
+    queries: todos.map((todo) => ({
+      queryKey: queryKeys.tasks.byTodo(todo.id, query),
+      queryFn: () => taskService.getByTodo(todo.id, query),
+    })),
+    combine: (results) => {
+      const time = (t: Task) => (parseDate(t.expectStart) ?? parseDate(t.expectEnd))?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const tasks: UpcomingTask[] = results.flatMap((r, i) =>
+        (r.data?.content ?? []).map((t) => ({ ...t, listTopic: todos[i].topic, listId: todos[i].id })),
+      );
+      return {
+        tasks: tasks.filter((t) => !t.done).sort((a, b) => time(a) - time(b)).slice(0, limit),
+        isLoading: results.some((r) => r.isLoading),
+        error: results.find((r) => r.error)?.error ?? null,
+      };
+    },
   });
 }
 

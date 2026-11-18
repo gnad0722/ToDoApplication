@@ -7,32 +7,21 @@ import { TaskMeta } from '@/components/task/TaskMeta';
 import { Button, Card, EmptyState, ErrorState, ProgressBar, Skeleton } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectPage } from '@/hooks/useProjects';
+import { useUpcomingTasks } from '@/hooks/useTasks';
 import { useTodoPage } from '@/hooks/useTodos';
 import { paths } from '@/routes/paths';
-import type { Task, TodoList } from '@/types/models';
 import { percent } from '@/utils/cn';
-import { parseDate } from '@/utils/date';
 
-/**
- * The backend has no "all my tasks" endpoint, so the dashboard reads the
- * `taskList` embedded in each to-do list (first DASHBOARD_LIMIT lists).
- */
+/** Stats are summed over the DASHBOARD_LIMIT most recently updated lists. */
 const DASHBOARD_LIMIT = 50;
-const UPCOMING_LIMIT = 8;
+/** Upcoming tasks are read from this many recent lists that still have open tasks. */
+const UPCOMING_LIST_COUNT = 5;
 
 function greeting() {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
   if (h < 18) return 'Good afternoon';
   return 'Good evening';
-}
-
-type TaskWithList = Task & { listTopic: string; listId: number };
-
-function collectUpcoming(todos: TodoList[]): TaskWithList[] {
-  const all = todos.flatMap((todo) => todo.tasks.map((t) => ({ ...t, listTopic: todo.topic, listId: todo.id })));
-  const time = (t: Task) => (parseDate(t.expectStart) ?? parseDate(t.expectEnd))?.getTime() ?? Number.MAX_SAFE_INTEGER;
-  return all.filter((t) => !t.done).sort((a, b) => time(a) - time(b)).slice(0, UPCOMING_LIMIT);
 }
 
 function StatCard({ icon, label, value, tone }: { icon: ReactNode; label: string; value: ReactNode; tone: string }) {
@@ -70,7 +59,12 @@ export function DashboardPage() {
     const done = todos.reduce((s, t) => s + t.numCompleteTask, 0);
     return { total, done, rate: percent(done, total) };
   }, [todos]);
-  const upcoming = useMemo(() => collectUpcoming(todos), [todos]);
+  const openLists = useMemo(
+    () => todos.filter((t) => t.numCompleteTask < t.numTask).slice(0, UPCOMING_LIST_COUNT),
+    [todos],
+  );
+  const upcomingQuery = useUpcomingTasks(openLists);
+  const upcoming = upcomingQuery.tasks;
 
   return (
     <>
@@ -110,8 +104,10 @@ export function DashboardPage() {
         {/* Upcoming tasks */}
         <section className="lg:col-span-3">
           <SectionHeader title="Upcoming tasks" to={paths.todos} />
-          {todosQuery.isLoading ? (
+          {todosQuery.isLoading || upcomingQuery.isLoading ? (
             <Skeleton className="h-72" />
+          ) : upcomingQuery.error ? (
+            <ErrorState error={upcomingQuery.error} />
           ) : upcoming.length === 0 ? (
             <EmptyState
               icon={<PartyPopper className="size-7" />}

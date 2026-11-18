@@ -6,8 +6,6 @@ import { getErrorMessage } from '@/utils/errors';
 
 function invalidateNoteRelated(qc: QueryClient, taskId: number) {
   qc.invalidateQueries({ queryKey: queryKeys.notes.byTask(taskId) });
-  // Task rows show a note icon, so refresh tasks as well.
-  qc.invalidateQueries({ queryKey: queryKeys.tasks.all });
 }
 
 export function useNote(taskId: number) {

@@ -102,8 +102,8 @@ export async function unwrap<T>(call: Promise<AxiosResponse<ApiResponse<T>>>): P
 
 /**
  * Builds Spring Pageable query params.
- * `filterParam` differs per endpoint in the backend: todo uses `filters`,
- * task and project use `filter`.
+ * `filterParam` differs per endpoint in the backend: todo and task use
+ * `filters`, project uses `filter`.
  */
 export function pageParams(q: PageQuery, filterParam: 'filter' | 'filters') {
   return {

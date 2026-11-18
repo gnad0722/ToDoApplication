@@ -6,7 +6,7 @@ import { mapPage, toTask } from './mappers';
 export const taskService = {
   getByTodo: async (todoId: number, q: PageQuery) => {
     const page = await unwrap<PageResponse<Record<string, unknown>>>(
-      http.get(`/api/task/todo/${todoId}`, { params: pageParams(q, 'filter') }),
+      http.get(`/api/task/todo/${todoId}`, { params: pageParams(q, 'filters') }),
     );
     return mapPage(page, (raw) => toTask(raw, todoId));
   },
@@ -17,7 +17,7 @@ export const taskService = {
 
   update: async (id: number, payload: UpdateTaskPayload) => toTask(await unwrap(http.patch(`/api/task/${id}`, payload))),
 
-  /** PATCH /api/task/done/{id}. Whether this toggles or only sets done depends on the backend. */
+  /** PATCH /api/task/done/{id}. The UI expects this to toggle done <-> not done. */
   markDone: async (id: number) => toTask(await unwrap(http.patch(`/api/task/done/${id}`))),
 
   remove: (id: number) => unwrap<void>(http.delete(`/api/task/${id}`)),

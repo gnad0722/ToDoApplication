@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { ArrowLeft, CalendarRange, ClipboardList, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarRange, Pencil, Trash2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { DeadlineBadge } from '@/components/project/DeadlineBadge';
 import { ProjectFormModal } from '@/components/project/ProjectFormModal';
-import { TaskMeta } from '@/components/task/TaskMeta';
-import { Button, Card, ConfirmDialog, EmptyState, ErrorState, ProgressBar, Skeleton } from '@/components/ui';
+import { Button, Card, ConfirmDialog, ErrorState, ProgressBar, Skeleton } from '@/components/ui';
 import { useDeleteProject, useProject } from '@/hooks/useProjects';
 import { paths } from '@/routes/paths';
-import { cn } from '@/utils/cn';
 import { formatDateTime, fromNow } from '@/utils/date';
 
 export function ProjectDetailPage() {
@@ -29,7 +27,6 @@ export function ProjectDetailPage() {
       <>
         {back}
         <Skeleton className="mb-6 h-56" />
-        <Skeleton className="h-40" />
       </>
     );
   }
@@ -84,36 +81,6 @@ export function ProjectDetailPage() {
         </div>
         {project.lastModifiedAt && <p className="mt-4 text-xs text-slate-400">Updated {fromNow(project.lastModifiedAt)}</p>}
       </Card>
-
-      <h2 className="mb-3 text-lg font-semibold text-slate-900">Tasks</h2>
-      {project.tasks.length === 0 ? (
-        <EmptyState
-          icon={<ClipboardList className="size-7" />}
-          title="No tasks linked to this project"
-          description="The backend does not provide an endpoint to link tasks to a project yet."
-        />
-      ) : (
-        <div className="space-y-2">
-          {project.tasks.map((task) => {
-            const inner = (
-              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <span className={cn('size-2.5 shrink-0 rounded-full', task.done ? 'bg-emerald-500' : 'bg-slate-300')} />
-                <div className="min-w-0 flex-1">
-                  <p className={cn('truncate text-sm font-medium', task.done ? 'text-slate-400 line-through' : 'text-slate-900')}>{task.name}</p>
-                  <TaskMeta task={task} />
-                </div>
-              </div>
-            );
-            return task.toDoId ? (
-              <Link key={task.id} to={paths.todoDetail(task.toDoId, task.id)} className="block hover:opacity-80">
-                {inner}
-              </Link>
-            ) : (
-              <div key={task.id}>{inner}</div>
-            );
-          })}
-        </div>
-      )}
 
       <ProjectFormModal open={editOpen} onClose={() => setEditOpen(false)} project={project} />
       <ConfirmDialog

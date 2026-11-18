@@ -1,7 +1,6 @@
 /**
- * Frontend domain models. Services convert backend DTOs into these shapes,
- * so components never deal with backend naming inconsistencies
- * (e.g. TaskDto.desc vs Task.description, isDone vs done).
+ * Frontend domain models. Services convert backend DTOs into these shapes
+ * (see services/mappers.ts), so components are isolated from backend naming.
  */
 
 export interface User {
@@ -28,7 +27,6 @@ export interface Task {
   createdAt?: string;
   lastModifiedAt?: string;
   toDoId?: number | null;
-  hasNote: boolean;
 }
 
 export interface TodoList {
@@ -39,7 +37,6 @@ export interface TodoList {
   numCompleteTask: number;
   createdAt?: string;
   lastModifiedAt?: string;
-  tasks: Task[];
 }
 
 export interface Note {
@@ -60,7 +57,6 @@ export interface Project {
   numCompleteTask: number;
   createdAt?: string;
   lastModifiedAt?: string;
-  tasks: Task[];
 }
 
 /* ---------- Request payloads ---------- */
