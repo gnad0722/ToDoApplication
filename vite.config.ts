@@ -16,7 +16,11 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       // In development the browser calls /api on the Vite server, which forwards
       // to the backend, so the backend needs no CORS configuration.
-      proxy: { '/api': { target: backend, changeOrigin: true } },
+      // `/push-token` (device registration for push notifications) lives outside /api.
+      proxy: {
+        '/api': { target: backend, changeOrigin: true },
+        '/push-token': { target: backend, changeOrigin: true },
+      },
     },
     build: {
       rollupOptions: {

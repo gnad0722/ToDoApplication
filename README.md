@@ -61,6 +61,12 @@ This repository contains the **frontend** only. It talks to the ToDo Management 
 - Set a description, start time and expected end date, with a deadline badge.
 - Filter and paginate projects.
 
+### Notifications
+- Bell in the top bar with an unread badge (refreshed every 30 seconds and when the window regains focus).
+- Panel with the 5 most recent notifications: to-do list / task created or updated, and to-do lists starting today.
+- Click a notification to mark it as read; hover it to toggle read / unread; "Mark all as read" in one click.
+- Optional browser push notifications (Firebase Cloud Messaging), enabled per device from the panel.
+
 ### Profile
 - View your account information (username, email, member since).
 - Change your password or log out.
@@ -125,6 +131,8 @@ cp .env.example .env
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
+**Push notifications (optional).** To receive browser push notifications, fill in the `VITE_FIREBASE_*` values in `.env` with the **Web app** config of the same Firebase project the backend uses (Firebase Console → Project settings → General → Your apps), and `VITE_FIREBASE_VAPID_KEY` with the key pair from Project settings → Cloud Messaging → Web Push certificates. If they are left empty, push is turned off and the notification panel still works. Browsers only allow push on `https://` or `http://localhost`.
+
 ### 4. Start the development server
 
 ```bash
@@ -133,7 +141,7 @@ npm run dev
 
 Open **http://localhost:5173** in your browser.
 
-> **How the dev server reaches the backend:** during development, Vite forwards every `/api/*` request to `VITE_API_BASE_URL`, so the backend does not need CORS configuration. A production build calls `VITE_API_BASE_URL` directly, so the backend **must enable CORS** for the frontend's origin.
+> **How the dev server reaches the backend:** during development, Vite forwards every `/api/*` request (and `/push-token`) to `VITE_API_BASE_URL`, so the backend does not need CORS configuration. A production build calls `VITE_API_BASE_URL` directly, so the backend **must enable CORS** for the frontend's origin.
 
 ### 5. Build for production
 
@@ -184,6 +192,7 @@ Route guards send logged-out users to the login page, and send logged-in users a
 | **Tasks** | `GET /api/task/todo/{todoId}`, `GET /api/task/{id}`, `POST /api/task`, `PATCH /api/task/{id}`, `PATCH /api/task/done/{id}`, `DELETE /api/task/{id}` |
 | **Notes** | `GET /api/note/{taskId}`, `POST /api/note/`, `PUT /api/note/{taskId}`, `DELETE /api/note/{taskId}` |
 | **Projects** | `GET /api/project/me`, `GET /api/project/{id}`, `POST /api/project/`, `PATCH /api/project/{id}`, `DELETE /api/project/{id}` |
+| **Notifications** | `GET /api/notification/recent`, `GET /api/notification/unread-count`, `PATCH /api/notification/{id}/read`, `PATCH /api/notification/{id}/unread`, `PATCH /api/notification/read-all`, `POST /push-token` |
 
 ### Authentication flow
 
@@ -241,7 +250,8 @@ src/
 │   ├── http.ts          #   axios instance, JWT + refresh interceptor, envelope unwrapping
 │   ├── mappers.ts       #   backend DTO -> frontend model (handles naming differences)
 │   ├── tokenStorage.ts  #   access / refresh token persistence
-│   └── *Service.ts      #   auth, todo, task, note, project
+│   ├── pushService.ts   #   Firebase Cloud Messaging (lazy-loaded) for browser push
+│   └── *Service.ts      #   auth, todo, task, note, project, notification
 ├── hooks/               # React Query hooks per module (queries + mutations + toasts)
 ├── contexts/            # AuthContext (session, login, register, logout)
 ├── schemas/             # Zod validation schemas (mirror backend constraints)
@@ -251,7 +261,8 @@ src/
 │   ├── ui/              # shared primitives: Button, Input, Modal, Drawer, ...
 │   ├── todo/            # TodoCard, TodoFormModal
 │   ├── task/            # TaskRow, TaskPanel, NoteSection, CreateTaskModal, ...
-│   └── project/         # ProjectCard, ProjectFormModal, DeadlineBadge
+│   ├── project/         # ProjectCard, ProjectFormModal, DeadlineBadge
+│   └── notification/    # NotificationBell (top-bar bell + panel), NotificationItem
 ├── pages/               # auth/, dashboard/, todo/, project/, profile/, NotFoundPage
 ├── utils/               # dates, errors, filters, form errors, class names
 ├── styles/              # global Tailwind stylesheet
@@ -306,6 +317,8 @@ Version 1 has these limitations:
 - Each task can have only one note.
 - There are no automated tests yet.
 - The interface is available in English only, with a light theme only.
+- Only the 5 most recent notifications can be shown (the backend has no paginated history yet), and a notification does not link to the list or task it is about, because the backend does not send that id.
+- Push notifications need the Firebase web config in `.env`; without it the badge is updated by polling only.
 
 ---
 
@@ -314,7 +327,8 @@ Version 1 has these limitations:
 This is the **first version** of the application. The project is still being developed, and future versions will add new features and improvements. Ideas being considered include:
 
 - [ ] Linking tasks to projects, with progress tracked at the project level
-- [ ] Reminders and deadline notifications
+- [x] Notifications for list / task changes and lists starting today
+- [ ] Task deadline reminders
 - [ ] Drag-and-drop to reorder tasks
 - [ ] Task priority, labels and tags
 - [ ] Dark mode

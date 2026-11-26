@@ -7,6 +7,7 @@ import type { CreateTaskPayload, Task, TodoList, UpdateTaskPayload } from '@/typ
 import { parseDate } from '@/utils/date';
 import { notifyMutationError } from '@/utils/formErrors';
 import { taskFilters, type TaskSort } from '@/utils/filters';
+import { invalidateNotifications } from './useNotifications';
 
 /** Task changes affect task lists AND the counters shown on lists/projects/dashboard. */
 function invalidateTaskRelated(qc: QueryClient) {
@@ -69,6 +70,7 @@ export function useCreateTask() {
     mutationFn: (payload: CreateTaskPayload) => taskService.create(payload),
     onSuccess: () => {
       invalidateTaskRelated(qc);
+      invalidateNotifications(qc); // the backend stores a notification for this
       toast.success('Task created');
     },
     onError: notifyMutationError,
@@ -81,6 +83,7 @@ export function useUpdateTask() {
     mutationFn: ({ id, payload }: { id: number; payload: UpdateTaskPayload }) => taskService.update(id, payload),
     onSuccess: () => {
       invalidateTaskRelated(qc);
+      invalidateNotifications(qc); // the backend stores a notification for this
       toast.success('Task updated');
     },
     onError: notifyMutationError,

@@ -5,6 +5,7 @@ import { todoService } from '@/services/todoService';
 import type { PageQuery } from '@/types/api';
 import type { TodoPayload } from '@/types/models';
 import { notifyMutationError } from '@/utils/formErrors';
+import { invalidateNotifications } from './useNotifications';
 
 export function useTodoPage(q: PageQuery) {
   return useQuery({
@@ -28,6 +29,7 @@ export function useCreateTodo() {
     mutationFn: (payload: TodoPayload) => todoService.create(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.todos.all });
+      invalidateNotifications(qc); // the backend stores a notification for this
       toast.success('To-do list created');
     },
     onError: notifyMutationError,
@@ -40,6 +42,7 @@ export function useUpdateTodo() {
     mutationFn: ({ id, payload }: { id: number; payload: Partial<TodoPayload> }) => todoService.update(id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.todos.all });
+      invalidateNotifications(qc); // the backend stores a notification for this
       toast.success('To-do list updated');
     },
     onError: notifyMutationError,

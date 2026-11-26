@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, FolderKanban, LayoutDashboard, ListTodo, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
+import { NotificationBell } from '@/components/notification/NotificationBell';
 import { IconButton } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { paths } from '@/routes/paths';
@@ -123,7 +124,10 @@ export function AppLayout() {
             <Menu className="size-5" />
           </IconButton>
           <div className="flex-1" />
-          <UserMenu />
+          <div className="flex items-center gap-1 sm:gap-2">
+            <NotificationBell />
+            <UserMenu />
+          </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:py-8">
           <Outlet />

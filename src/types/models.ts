@@ -95,3 +95,24 @@ export interface ProjectPayload {
   startTime?: string | null;
   expectEnd?: string | null;
 }
+
+/* ---------- Notifications ---------- */
+
+/** Backend `MessageType`: the event that produced a notification. */
+export type NotificationType =
+  | 'TODO_LIST_CREATED'
+  | 'TODO_LIST_UPDATED'
+  | 'TASK_CREATED'
+  | 'TASK_UPDATED'
+  | 'TODO_LIST_DUE';
+
+export interface AppNotification {
+  id: number;
+  /** Kept as string so an unknown future type from the backend still renders. */
+  type: NotificationType | (string & {});
+  title: string;
+  body: string;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt?: string;
+}

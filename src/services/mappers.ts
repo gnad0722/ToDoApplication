@@ -1,5 +1,5 @@
 import type { PageResponse } from '@/types/api';
-import type { Note, Project, Task, TodoList } from '@/types/models';
+import type { AppNotification, Note, Project, Task, TodoList } from '@/types/models';
 
 /** Converters from backend DTOs to frontend models. */
 
@@ -55,6 +55,19 @@ export function toNote(raw: Raw): Note {
     taskId: raw.taskId,
     createdAt: raw.createdAt,
     lastModifiedAt: raw.lastModifiedAt,
+  };
+}
+
+export function toNotification(raw: Raw): AppNotification {
+  return {
+    id: raw.id,
+    type: raw.type ?? '',
+    title: raw.title ?? '',
+    body: raw.body ?? '',
+    // Same Lombok/Jackson naming issue as Task.isDone: accept `isRead` and `read`.
+    isRead: Boolean(raw.isRead ?? raw.read ?? false),
+    readAt: raw.readAt ?? null,
+    createdAt: raw.createdAt,
   };
 }
 

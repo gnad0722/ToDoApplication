@@ -6,7 +6,21 @@
  */
 export const env = {
   apiBaseUrl: import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'),
+  /**
+   * Firebase web app config, used only for push notifications (FCM).
+   * Leave these empty to disable push: in-app notifications still work.
+   */
+  firebase: {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? '',
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? '',
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '',
+    appId: import.meta.env.VITE_FIREBASE_APP_ID ?? '',
+    vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY ?? '',
+  },
 } as const;
+
+/** Polling interval for the unread-notification badge. */
+export const NOTIFICATION_POLL_MS = 30_000;
 
 /** Default page sizes used across list pages. */
 export const PAGE_SIZE = {

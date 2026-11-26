@@ -25,4 +25,9 @@ export const queryKeys = {
     list: (q: PageQuery) => ['projects', 'list', q] as const,
     detail: (id: number) => ['projects', 'detail', id] as const,
   },
+  notifications: {
+    all: ['notifications'] as const,
+    recent: ['notifications', 'recent'] as const,
+    unreadCount: ['notifications', 'unread-count'] as const,
+  },
 } as const;
